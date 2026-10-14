@@ -1,4 +1,4 @@
-name: Gerar APK
+name: github/workflows/gerar-apk.yml
 on:
   workflow_dispatch:
 jobs:
