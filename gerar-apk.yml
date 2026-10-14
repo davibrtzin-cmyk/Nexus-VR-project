@@ -1,0 +1,28 @@
+name: Gerar APK
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descompactar projeto
+        run: |
+          unzip -q NexusVR-0.1.0.zip
+          chmod +x NexusVR/gradlew
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@v3
+      - name: Testes
+        working-directory: NexusVR
+        run: ./gradlew :app:testDebugUnitTest --no-daemon
+      - name: Compilar APK
+        working-directory: NexusVR
+        run: ./gradlew :app:assembleDebug --no-daemon
+      - run: cp NexusVR/app/build/outputs/apk/debug/app-debug.apk NEXUS-VR.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NEXUS-VR-apk
+          path: NEXUS-VR.apk
