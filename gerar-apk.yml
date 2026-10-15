@@ -1,14 +1,23 @@
-name: .github/workflows/gerar-apk.yml.
+# Compila o NEXUS VR na nuvem do GitHub e publica o APK numa Release.
+# Roda sozinho a cada alteração no repositório (e também manualmente em Actions > Gerar APK > Run workflow).
+# Para baixar: aba "Releases" > versão mais recente > NEXUS-VR.apk.
+name: Gerar APK
 on:
+  push:
+    branches: [main, master]
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Descompactar projeto
+      - name: Descompactar o projeto mais recente
         run: |
-          unzip -q NexusVR-0.1.0.zip
+          ZIP=$(ls NexusVR-*.zip | sort -V | tail -1)
+          echo "Usando $ZIP"
+          unzip -q -o "$ZIP"
           chmod +x NexusVR/gradlew
       - uses: actions/setup-java@v4
         with:
@@ -18,11 +27,24 @@ jobs:
       - name: Testes
         working-directory: NexusVR
         run: ./gradlew :app:testDebugUnitTest --no-daemon
-      - name: Compilar APK
+      - name: Compilar APK (baixa o modelo de mãos sozinho)
         working-directory: NexusVR
         run: ./gradlew :app:assembleDebug --no-daemon
-      - run: cp NexusVR/app/build/outputs/apk/debug/app-debug.apk NEXUS-VR.apk
+      - name: Conferir tamanho e modelo
+        run: |
+          ls -l NexusVR/app/build/outputs/apk/debug/app-debug.apk
+          unzip -l NexusVR/app/build/outputs/apk/debug/app-debug.apk | grep hand_landmarker || echo "AVISO: modelo de mãos ausente (app só com toque)"
+          cp NexusVR/app/build/outputs/apk/debug/app-debug.apk NEXUS-VR.apk
       - uses: actions/upload-artifact@v4
         with:
           name: NEXUS-VR-apk
           path: NEXUS-VR.apk
+      - name: Publicar Release com o APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "build-${{ github.run_number }}" NEXUS-VR.apk \
+            --repo "${{ github.repository }}" \
+            --title "NEXUS VR (build ${{ github.run_number }})" \
+            --notes "Baixe NEXUS-VR.apk, abra no Android e permita instalar de fonte desconhecida. Protótipo: veja o README." \
+            --latest
