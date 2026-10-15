@@ -1,7 +1,7 @@
 # Compila o NEXUS VR na nuvem do GitHub e publica o APK numa Release.
 # Roda sozinho a cada alteração no repositório (e também manualmente em Actions > Gerar APK > Run workflow).
 # Para baixar: aba "Releases" > versão mais recente > NEXUS-VR.apk.
-name: Gerar APK
+name: .github/workflows/gerar-apk.yml
 on:
   push:
     branches: [main, master]
